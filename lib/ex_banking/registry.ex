@@ -26,18 +26,27 @@ defmodule ExBanking.Registry do
   @impl true
   def handle_call({:deposit, user, amount, currency}, _from, users)
       when is_binary(user) and is_binary(currency) and is_number(amount) and amount >= 0 do
-    case users do
-      %{^user => balance} ->
-        new_balance = Map.update(balance, currency, amount, &(&1 + amount))
-        {:reply, {:ok, new_balance[currency]}, Map.update!(users, user, fn _ -> new_balance end)}
-
-      _ ->
-        {:reply, {:error, :user_does_not_exist}, users}
+    with {:ok, %{^user => balance}} <- check_user(users, user),
+         {:ok, new_balance} <- deposit(balance, currency, amount) do
+            {:reply, {:ok, new_balance[currency]}, Map.update!(users, user, fn _ -> new_balance end)}
+    else
+      error -> {:reply, error, users}
     end
   end
 
   @impl true
   def handle_call({:deposit, _user, _amount, _currency}, _from, users) do
     {:reply, {:error, :wrong_arguments}, users}
+  end
+
+  defp check_user(users, user) do
+    case users do
+      %{^user => balance} -> {:ok, %{user => balance}}
+      _ -> {:error, :user_does_not_exist}
+    end
+  end
+
+  defp deposit(balance, currency, amount) do
+    {:ok, Map.update(balance, currency, amount, &(&1 + amount))}
   end
 end
