@@ -19,11 +19,6 @@ defmodule ExBanking.Registry do
   end
 
   @impl true
-  def handle_call({:create, _user}, _from, users) do
-    {:reply, {:error, :wrong_arguments}, users}
-  end
-
-  @impl true
   def handle_call({:deposit, user, amount, currency}, _from, users)
       when is_binary(user) and is_binary(currency) and is_number(amount) and amount >= 0 do
     with {:ok, balance} <- check_user(users, user),
@@ -32,11 +27,6 @@ defmodule ExBanking.Registry do
     else
       error -> {:reply, error, users}
     end
-  end
-
-  @impl true
-  def handle_call({:deposit, _user, _amount, _currency}, _from, users) do
-    {:reply, {:error, :wrong_arguments}, users}
   end
 
   @impl true
@@ -51,7 +41,7 @@ defmodule ExBanking.Registry do
   end
 
   @impl true
-  def handle_call({:withdraw, _user, _amount, _currency}, _from, users) do
+  def handle_call(_, _, users) do
     {:reply, {:error, :wrong_arguments}, users}
   end
 
