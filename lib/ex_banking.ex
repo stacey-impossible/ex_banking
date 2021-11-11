@@ -55,4 +55,14 @@ defmodule ExBanking do
   def withdraw(user, amount, currency) do
     GenServer.call(ExBankingStack, {:withdraw, user, amount, currency})
   end
+
+  @doc """
+  Returns balance of the user in given format
+  """
+  @spec get_balance(user :: String.t(), currency :: String.t()) ::
+          {:ok, balance :: number}
+          | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
+  def get_balance(user, currency) do
+    GenServer.call(ExBankingStack, {:get_balance, user, currency})
+  end
 end

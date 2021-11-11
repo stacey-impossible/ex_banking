@@ -59,4 +59,23 @@ defmodule ExBankingTest do
       assert {:ok, 5} = ExBanking.withdraw("test5", 15, "EUR")
     end
   end
+
+  describe "get_balance/3" do
+    test "doesn't get balance of non-existing user" do
+      assert {:error, :user_does_not_exist} = ExBanking.get_balance("test", "RUB")
+    end
+
+    test "doesn't get balance with invalid input" do
+      ExBanking.create_user("test6")
+      assert {:error, :wrong_arguments} = ExBanking.get_balance(:test6, "RUB")
+      assert {:error, :wrong_arguments} = ExBanking.get_balance("test6", :RUB)
+    end
+
+    test "gets balances in different currencies correctly" do
+      ExBanking.create_user("test7")
+      assert {:ok, 20} = ExBanking.deposit("test7", 20, "RUB")
+      assert {:ok, 20} = ExBanking.get_balance("test7", "RUB")
+      assert {:ok, 0} = ExBanking.get_balance("test7", "EUR")
+    end
+  end
 end

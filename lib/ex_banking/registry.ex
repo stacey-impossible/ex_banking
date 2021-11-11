@@ -34,8 +34,18 @@ defmodule ExBanking.Registry do
       when is_binary(user) and is_binary(currency) and is_number(amount) and amount >= 0 do
     with {:ok, balance} <- check_user(users, user),
          {:ok, new_balance} <- withdraw(balance, currency, amount) do
-      {:reply, {:ok, new_balance[currency]}, Map.update!(users, user, fn _ -> new_balance end)}
+      {:reply, {:ok, Map.get(new_balance, currency, 0)},
+       Map.update!(users, user, fn _ -> new_balance end)}
     else
+      error -> {:reply, error, users}
+    end
+  end
+
+  @impl true
+  def handle_call({:get_balance, user, currency}, _from, users)
+      when is_binary(user) and is_binary(currency) do
+    case check_user(users, user) do
+      {:ok, balance} -> {:reply, {:ok, Map.get(balance, currency, 0)}, users}
       error -> {:reply, error, users}
     end
   end
@@ -56,8 +66,8 @@ defmodule ExBanking.Registry do
     {:ok, Map.update(balance, currency, amount, &(&1 + amount))}
   end
 
-  defp withdraw(balance, currency, 0) do
-    {:ok, Map.update(balance, currency, 0, & &1)}
+  defp withdraw(balance, _currency, 0) do
+    {:ok, balance}
   end
 
   defp withdraw(balance, currency, amount) do
