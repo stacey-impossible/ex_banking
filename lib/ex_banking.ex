@@ -41,4 +41,18 @@ defmodule ExBanking do
   def deposit(user, amount, currency) do
     GenServer.call(ExBankingStack, {:deposit, user, amount, currency})
   end
+
+  @doc """
+  Function decreases user’s balance in given currency by amount value.
+  """
+  @spec withdraw(user :: String.t(), amount :: number, currency :: String.t()) ::
+          {:ok, new_balance :: number}
+          | {:error,
+             :wrong_arguments
+             | :user_does_not_exist
+             | :not_enough_money
+             | :too_many_requests_to_user}
+  def withdraw(user, amount, currency) do
+    GenServer.call(ExBankingStack, {:withdraw, user, amount, currency})
+  end
 end
