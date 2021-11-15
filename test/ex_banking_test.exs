@@ -53,14 +53,14 @@ defmodule ExBankingTest do
 
     test "withdraws amounts in different currencies correctly" do
       ExBanking.create_user("test5")
-      assert {:ok, 20} = ExBanking.deposit("test5", 20, "RUB")
+      ExBanking.deposit("test5", 20, "RUB")
       assert {:ok, 10} = ExBanking.withdraw("test5", 10, "RUB")
-      assert {:ok, 20} = ExBanking.deposit("test5", 20, "EUR")
+      ExBanking.deposit("test5", 20, "EUR")
       assert {:ok, 5} = ExBanking.withdraw("test5", 15, "EUR")
     end
   end
 
-  describe "get_balance/3" do
+  describe "get_balance/2" do
     test "doesn't get balance of non-existing user" do
       assert {:error, :user_does_not_exist} = ExBanking.get_balance("test", "RUB")
     end
@@ -73,9 +73,47 @@ defmodule ExBankingTest do
 
     test "gets balances in different currencies correctly" do
       ExBanking.create_user("test7")
-      assert {:ok, 20} = ExBanking.deposit("test7", 20, "RUB")
+      ExBanking.deposit("test7", 20, "RUB")
       assert {:ok, 20} = ExBanking.get_balance("test7", "RUB")
       assert {:ok, 0} = ExBanking.get_balance("test7", "EUR")
+    end
+  end
+
+  describe "send/4" do
+    test "doesn't send from non-existing user" do
+      ExBanking.create_user("test8")
+      assert {:error, :sender_does_not_exist} = ExBanking.send("test", "test8", 20, "RUB")
+    end
+
+    test "doesn't send to non-existing user" do
+      ExBanking.create_user("test9")
+      assert {:error, :receiver_does_not_exist} = ExBanking.send("test9", "test", 20, "RUB")
+    end
+
+    test "doesn't send with invalid input" do
+      assert {:error, :wrong_arguments} = ExBanking.send(:test, "test", 20, "RUB")
+      assert {:error, :wrong_arguments} = ExBanking.send("test", :test, 20, "RUB")
+      assert {:error, :wrong_arguments} = ExBanking.send("test", "test", -20, "RUB")
+      assert {:error, :wrong_arguments} = ExBanking.send("test", "test", "20", "RUB")
+      assert {:error, :wrong_arguments} = ExBanking.send("test", "test", 20, :RUB)
+    end
+
+    test "doesn't withdraw if there is not enough money" do
+      ExBanking.create_user("test10")
+      ExBanking.create_user("test11")
+      assert {:error, :not_enough_money} = ExBanking.send("test10", "test11", 20, "RUB")
+      ExBanking.deposit("test10", 10, "RUB")
+      assert {:error, :not_enough_money} = ExBanking.send("test10", "test11", 20, "RUB")
+    end
+
+    test "sends in different currencies correctly" do
+      ExBanking.create_user("test12")
+      ExBanking.create_user("test13")
+      ExBanking.deposit("test12", 20, "RUB")
+      assert {:ok, 15, 5} = ExBanking.send("test12", "test13", 5, "RUB")
+      ExBanking.deposit("test12", 50, "EUR")
+      ExBanking.deposit("test13", 10, "EUR")
+      assert {:ok, 25, 35} = ExBanking.send("test12", "test13", 25, "EUR")
     end
   end
 end
