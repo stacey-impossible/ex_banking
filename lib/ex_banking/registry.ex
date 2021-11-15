@@ -89,6 +89,10 @@ defmodule ExBanking.Registry do
     end
   end
 
+  defp deposit(balance, currency, amount) when is_float(amount) do
+    {:ok, Map.update(balance, currency, amount, &Float.round(&1 + amount, 2))}
+  end
+
   defp deposit(balance, currency, amount) do
     {:ok, Map.update(balance, currency, amount, &(&1 + amount))}
   end
@@ -101,7 +105,15 @@ defmodule ExBanking.Registry do
     if is_nil(balance[currency]) or balance[currency] < amount do
       {:error, :not_enough_money}
     else
-      {:ok, Map.update(balance, currency, amount, &(&1 - amount))}
+      {:ok, Map.update(balance, currency, amount, &substract_amount(&1, amount))}
     end
+  end
+
+  defp substract_amount(deposit, amount) when is_float(amount) do
+    Float.round(deposit - amount, 2)
+  end
+
+  defp substract_amount(deposit, amount) do
+    deposit - amount
   end
 end

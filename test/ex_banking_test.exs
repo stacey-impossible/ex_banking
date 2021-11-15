@@ -26,9 +26,9 @@ defmodule ExBankingTest do
 
     test "adds amounts in different currencies correctly", %{name: name} do
       assert {:ok, 20} = ExBanking.deposit(name, 20, "RUB")
-      assert {:ok, 40} = ExBanking.deposit(name, 20, "RUB")
+      assert {:ok, 40.89} = ExBanking.deposit(name, 20.888, "RUB")
       assert {:ok, 20} = ExBanking.deposit(name, 20, "EUR")
-      assert {:ok, 35} = ExBanking.deposit(name, 15, "EUR")
+      assert {:ok, 35.45} = ExBanking.deposit(name, 15.454, "EUR")
     end
   end
 
@@ -60,7 +60,7 @@ defmodule ExBankingTest do
       ExBanking.deposit(name, 20, "RUB")
       assert {:ok, 10} = ExBanking.withdraw(name, 10, "RUB")
       ExBanking.deposit(name, 20, "EUR")
-      assert {:ok, 5} = ExBanking.withdraw(name, 15, "EUR")
+      assert {:ok, 4.01} = ExBanking.withdraw(name, 15.986, "EUR")
     end
   end
 
