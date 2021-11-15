@@ -21,6 +21,6 @@ defmodule ExBanking.MixProject do
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
-    []
+    [{:faker, "~> 0.16", only: :test}]
   end
 end
