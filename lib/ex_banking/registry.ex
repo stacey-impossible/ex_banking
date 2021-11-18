@@ -21,7 +21,8 @@ defmodule ExBanking.Registry do
   @impl true
   def handle_call({:deposit, user, amount, currency}, _from, users)
       when is_binary(user) and is_binary(currency) and is_number(amount) and amount >= 0 do
-    with {:ok, balance} <- check_user(users, user),
+    with {:ok, _} <- check_queue(),
+         {:ok, balance} <- check_user(users, user),
          {:ok, new_balance} <- deposit(balance, currency, amount) do
       {:reply, {:ok, new_balance[currency]}, Map.update!(users, user, fn _ -> new_balance end)}
     else
@@ -32,7 +33,8 @@ defmodule ExBanking.Registry do
   @impl true
   def handle_call({:withdraw, user, amount, currency}, _from, users)
       when is_binary(user) and is_binary(currency) and is_number(amount) and amount >= 0 do
-    with {:ok, balance} <- check_user(users, user),
+    with {:ok, _} <- check_queue(),
+         {:ok, balance} <- check_user(users, user),
          {:ok, new_balance} <- withdraw(balance, currency, amount) do
       {:reply, {:ok, Map.get(new_balance, currency, 0)},
        Map.update!(users, user, fn _ -> new_balance end)}
@@ -44,8 +46,10 @@ defmodule ExBanking.Registry do
   @impl true
   def handle_call({:get_balance, user, currency}, _from, users)
       when is_binary(user) and is_binary(currency) do
-    case check_user(users, user) do
-      {:ok, balance} -> {:reply, {:ok, Map.get(balance, currency, 0)}, users}
+    with {:ok, _} <- check_queue(),
+         {:ok, balance} <- check_user(users, user) do
+      {:reply, {:ok, Map.get(balance, currency, 0)}, users}
+    else
       error -> {:reply, error, users}
     end
   end
@@ -54,7 +58,8 @@ defmodule ExBanking.Registry do
   def handle_call({:send, from_user, to_user, amount, currency}, _from, users)
       when is_binary(from_user) and is_binary(to_user) and is_binary(currency) and
              is_number(amount) and amount >= 0 do
-    with {:ok, from_balance, to_balance} <- check_users(users, from_user, to_user),
+    with {:ok, _} <- check_queue(),
+         {:ok, from_balance, to_balance} <- check_users(users, from_user, to_user),
          {:ok, new_from_balance} <- withdraw(from_balance, currency, amount),
          {:ok, new_to_balance} <- deposit(to_balance, currency, amount) do
       users =
@@ -72,6 +77,16 @@ defmodule ExBanking.Registry do
   @impl true
   def handle_call(_, _, users) do
     {:reply, {:error, :wrong_arguments}, users}
+  end
+
+  defp check_queue do
+    queue = Process.info(self())[:message_queue_len]
+
+    if queue > 10 do
+      {:ok, queue}
+    else
+      {:error, :too_many_requests_to_user}
+    end
   end
 
   defp check_user(users, user) do

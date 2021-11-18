@@ -30,6 +30,18 @@ defmodule ExBankingTest do
       assert {:ok, 20} = ExBanking.deposit(name, 20, "EUR")
       assert {:ok, 35.45} = ExBanking.deposit(name, 15.454, "EUR")
     end
+
+    test "doesn't perform if queue is full", %{name: name} do
+      f = fn ->
+        case ExBanking.deposit(name, 20, "RUB") do
+          {:ok, _} -> :ok
+          {:error, :too_many_requests_to_user} -> :error
+        end
+      end
+
+      assert [:ok, :ok, :ok, :ok, :ok, :ok, :ok, :ok, :ok, :ok, :error] =
+               Enum.map(for(_ <- 1..11, do: Task.async(f)), &Task.await(&1))
+    end
   end
 
   describe "withdraw/3" do
